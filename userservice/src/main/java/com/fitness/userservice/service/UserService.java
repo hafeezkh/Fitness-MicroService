@@ -9,30 +9,29 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
-import java.util.stream.Collectors;
 
 
 @Service
 @Slf4j
 public class UserService {
-
-    public List<UserResponse> getAllUsers() {
-        return repository.findAll().stream().map(user -> {
-            UserResponse response = new UserResponse();
-            response.setId(user.getId());
-            response.setPassword(user.getPassword());
-            response.setEmail(user.getEmail());
-            response.setFirstName(user.getFirstName());
-            response.setLastName(user.getLastName());
-            response.setCreatedAt(user.getCreatedAt());
-            response.setUpdatedAt(user.getUpdatedAt());
-            return response;
-        }).collect(Collectors.toList());
-    }
     @Autowired
     private UserRepository repository;
     public UserResponse register(RegisterRequest request) {
+
+        if(repository.existsByEmail(request.getEmail())){
+            User existingUser = repository.findByEmail(request.getEmail());
+            UserResponse userResponse = new UserResponse();
+            userResponse.setId(existingUser.getId());
+            userResponse.setKeyCloakId(existingUser.getKeyCloakId());
+            userResponse.setPassword(existingUser.getPassword());
+            userResponse.setEmail(existingUser.getEmail());
+            userResponse.setFirstName(existingUser.getFirstName());
+            userResponse.setLastName(existingUser.getLastName());
+            userResponse.setCreatedAt(existingUser.getCreatedAt());
+            userResponse.setUpdatedAt(existingUser.getUpdatedAt() );
+            return userResponse;
+
+        }
         User user = new User();
         user.setEmail(request.getEmail());
         user.setPassword(request.getPassword());
@@ -42,6 +41,8 @@ public class UserService {
         User savedUser = repository.save(user);
         UserResponse userResponse = new UserResponse();
         userResponse.setId(savedUser.getId());
+        userResponse.setKeyCloakId(savedUser.getKeyCloakId());
+
         userResponse.setPassword(savedUser.getPassword());
         userResponse.setEmail(savedUser.getEmail());
         userResponse.setFirstName(savedUser.getFirstName());
@@ -70,6 +71,6 @@ public class UserService {
 
     public Boolean existByUserID(String userId) {
         log.info("Calling User Validation API for userId:{}", userId);
-        return repository.existsById(userId);
+        return repository.existsByKeyCloakId(userId);
     }
 }
